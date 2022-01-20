@@ -2,13 +2,13 @@ package main
 
 import (
 	"bytes"
-	"flag"
 	"io"
 	"os"
 	"strings"
 	"testing"
 )
 
+// non thread-safe
 func CaptureStdout(f func()) string {
 	old := os.Stdout
 	r, w, _ := os.Pipe()
@@ -24,7 +24,10 @@ func CaptureStdout(f func()) string {
 }
 
 func setup() {
-	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError) // Reset flags
+	// Reset flags to avoid panic: redefined flag
+	// https://stackoverflow.com/questions/57969637/how-to-unset-flags-visited-on-command-line-in-golang-for-tests
+	// Waiting for future releases
+	// flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 
 	var envVariables = map[string]string{
 		"PWD":            "/home/username/Downloads",
@@ -46,6 +49,7 @@ func TestSuccessful(t *testing.T) {
 	}
 }
 
+// Sometimes SSH_CONNECTION env variable is not properly set
 func TestFailingSshString(t *testing.T) {
 	setup()
 	os.Setenv("SSH_CONNECTION", "192.168.1.21 54599")
